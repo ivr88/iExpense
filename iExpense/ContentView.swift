@@ -1,21 +1,57 @@
-//
-//  ContentView.swift
-//  iExpense
-//
-//  Created by Вадим Исламов on 27.11.2023.
-//
-
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+@Observable
+class Expenses {
+    var items = [ExpenseItem]() {
+    didSet {
+        if let encoded = try? JSONEncoder().encode(items){
+                UserDefaults.standard.setValue(encoded, forKey: "Items")
+            }
         }
-        .padding()
+    }
+    init() {
+        if let savedItems = UserDefaults.standard.data(forKey: "Items") {
+            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
+                items = decodedItems
+                return
+            }
+        }
+        items = []
+    }
+}
+
+struct ContentView: View {
+    @State private var expenses = Expenses()
+    @State private var showingAddExpense = false
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(expenses.items) { item in
+                    HStack {
+                        VStack (alignment: .leading) {
+                            Text (item.name)
+                                .font(.headline)
+                            Text (item.type)
+                        }
+                        Spacer()
+                        Text(item.amount, format: .currency(code: "USD"))
+                    }
+                }
+                .onDelete(perform: removeItems)
+            }
+            .navigationTitle("IExpense")
+            .toolbar {
+                Button("Add Expense", systemImage: "plus") {
+                    showingAddExpense = true
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddExpense) {
+            AddView(expenses: expenses)
+        }
+    }
+    func removeItems(at offsets: IndexSet) {
+        expenses.items.remove(atOffsets: offsets)
     }
 }
 
