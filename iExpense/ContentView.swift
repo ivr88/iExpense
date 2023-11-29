@@ -1,28 +1,9 @@
 import SwiftUI
 
-@Observable
-class Expenses {
-    var items = [ExpenseItem]() {
-    didSet {
-        if let encoded = try? JSONEncoder().encode(items){
-                UserDefaults.standard.setValue(encoded, forKey: "Items")
-            }
-        }
-    }
-    init() {
-        if let savedItems = UserDefaults.standard.data(forKey: "Items") {
-            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
-                items = decodedItems
-                return
-            }
-        }
-        items = []
-    }
-}
-
 struct ContentView: View {
     @State private var expenses = Expenses()
     @State private var showingAddExpense = false
+    
     var body: some View {
         NavigationStack {
             List {
@@ -34,15 +15,17 @@ struct ContentView: View {
                             Text (item.type)
                         }
                         Spacer()
-                        Text(item.amount, format: .currency(code: "USD"))
+                        Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                     }
                 }
                 .onDelete(perform: removeItems)
+                .onMove { expenses.items.move(fromOffsets: $0, toOffset: $1)}
             }
             .navigationTitle("IExpense")
+            .navigationBarItems(leading: EditButton())
             .toolbar {
                 Button("Add Expense", systemImage: "plus") {
-                    showingAddExpense = true
+                showingAddExpense = true
                 }
             }
         }
@@ -50,7 +33,7 @@ struct ContentView: View {
             AddView(expenses: expenses)
         }
     }
-    func removeItems(at offsets: IndexSet) {
+    func removeItems(offsets: IndexSet) {
         expenses.items.remove(atOffsets: offsets)
     }
 }

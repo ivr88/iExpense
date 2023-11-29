@@ -2,9 +2,9 @@ import SwiftUI
 
 struct AddView: View {
     @State private var name = ""
-    @State private var type = ""
+    @State private var type = "Business"
     @State private var amount = 0.0
-    
+    @Environment(\.editMode) private var editMode
     let types = ["Business", "Personal"]
     
     var expenses: Expenses
